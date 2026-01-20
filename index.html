@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCQ Master | Offline Ready</title>
+
+  <!-- External Libraries (CDN) -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@500;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* --- DESIGN SYSTEM --- */
+    :root {
+      --primary: #06b6d4;
+      --primary-glow: rgba(6, 182, 212, 0.5);
+      --secondary: #8b5cf6;
+      --bg: #0a0a0c;
+      --glass: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --text-muted: #a1a1aa;
+      --option-bg: rgba(255, 255, 255, 0.05);
+      --option-hover: rgba(6, 182, 212, 0.1);
+    }
+
+    body.light-theme {
+      --bg: #f0f9ff;
+      --text: #1e293b;
+      --glass: rgba(255, 255, 255, 0.7);
+      --border: rgba(0, 0, 0, 0.1);
+      --text-muted: #64748b;
+      --primary-glow: rgba(6, 182, 212, 0.2);
+      --option-bg: #e2e8f0;
+      --option-hover: #cffafe;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .glass {
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      color: var(--text);
+    }
+
+    .code-font {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 20px;
+      height: calc(100vh - 140px);
+    }
+
+    @media (max-width: 900px) {
+      .split-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #0891b2);
+      color: #000;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--text-muted);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .text-gradient {
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    input,
+    select,
+    textarea {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 2px solid var(--primary);
+      border-color: transparent;
+    }
+
+    /* Option as Code Line */
+    .option-btn {
+      padding: 12px 16px;
+      text-align: left;
+      color: var(--text);
+      background: var(--option-bg);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      font-family: 'Consolas', monospace;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .option-btn:hover {
+      background: var(--option-hover);
+      border-color: var(--primary);
+    }
+
+    .option-btn.selected {
+      background: var(--primary);
+      color: #000;
+      font-weight: bold;
+    }
+
+    #error-log {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 0, 0, 0.9);
+      color: white;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      display: none;
+      z-index: 9999;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root" style="padding: 50px; text-align: center;">
+    <h1 style="opacity: 0.5;">Loading App...</h1>
+    <p style="opacity: 0.3;">If this takes too long, check your internet connection (needed for first load only).</p>
+  </div>
+
+  <div id="error-log"></div>
+
+  <script>
+    // Global Error Handler to show startup crashes
+    window.onerror = function (msg, url, line) {
+      const el = document.getElementById('error-log');
+      el.style.display = 'block';
+      el.innerHTML += `<div>Error: ${msg} (Line ${line})</div>`;
+    };
+
+    // --- INLINE DATA ---
+    window.INITIAL_DATA = [
+      { id: 1, book: 'NCERT', classNum: '9', chapter: 'Number Systems', text: 'Every natural number is a whole number.', options: ['True', 'False', 'Depends', 'None'], correctOptionIndex: 0, diagram: null },
+      { id: 2, book: 'RD Sharma', classNum: '9', chapter: 'Polynomials', text: 'Degree of a zero polynomial is:', options: ['0', '1', 'Not defined', 'None of these'], correctOptionIndex: 2, diagram: null }
+    ];
+  </script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- ICONS (Inline SVG to avoid dependency crashes) ---
+    const Icon = ({ path }) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
+    );
+    const Icons = {
+      Play: <Icon path={<polygon points="5 3 19 12 5 21 5 3"></polygon>} />,
+      Settings: <Icon path={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></>} />,
+      Plus: <Icon path={<><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></>} />,
+      Trash2: <Icon path={<><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></>} />,
+      Save: <Icon path={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></>} />,
+      X: <Icon path={<><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></>} />,
+      ArrowRight: <Icon path={<><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></>} />,
+      Home: <Icon path={<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></>} />,
+      Clock: <Icon path={<><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></>} />,
+      FileJson: <Icon path={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></>} />,
+      Sun: <Icon path={<><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></>} />,
+      Moon: <Icon path={<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>} />,
+    };
+
+    // --- COMPONENTS ---
+
+    // 1. Geometry Editor (Final Polish)
+    const GeometryEditor = ({ onSave }) => {
+      const canvasRef = useRef(null);
+      const [elements, setElements] = useState([]);
+      const [tool, setTool] = useState('line');
+      const [color, setColor] = useState('#ffffff');
+      const [selectedId, setSelectedId] = useState(null);
+
+      const [dragStart, setDragStart] = useState(null);
+      const [currentShape, setCurrentShape] = useState(null);
+      const [textInput, setTextInput] = useState(null);
+      const [multiStep, setMultiStep] = useState(null);
+
+      // --- HELPERS ---
+      const dist = (p1, p2) => Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+      const mid = (p1, p2) => ({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 });
+      const angle = (p1, c, p2) => {
+        let a1 = Math.atan2(p1.y - c.y, p1.x - c.x);
+        let a2 = Math.atan2(p2.y - c.y, p2.x - c.x);
+        let ang = (a2 - a1) * (180 / Math.PI);
+        if (ang < 0) ang += 360;
+        return ang;
+      };
+
+      const getPos = (e) => {
+        const r = canvasRef.current.getBoundingClientRect();
+        const scaleX = canvasRef.current.width / r.width;
+        const scaleY = canvasRef.current.height / r.height;
+        return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
+      };
+
+      const snapToPoint = (x, y, excludeId) => {
+        const SNAP = 10;
+        let best = { x, y, d: Infinity };
+        elements.forEach(el => {
+          if (el.id === excludeId) return;
+          const check = (px, py) => { let d = dist({ x, y }, { x: px, y: py }); if (d < SNAP && d < best.d) best = { x: px, y: py, d }; };
+          if (el.type === 'line' || el.type === 'bisector') { check(el.x, el.y); check(el.x2, el.y2); }
+          if (el.type === 'poly') { el.points.forEach(p => check(p.x, p.y)); }
+        });
+        return best.d < SNAP ? { x: best.x, y: best.y } : { x, y };
+      };
+
+      // --- RENDER ---
+      useEffect(() => {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.fillStyle = '#1e1e1e';
+        ctx.fillRect(0, 0, 800, 500);
+
+        // Grid
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.beginPath();
+        for (let i = 0; i < 800; i += 40) { ctx.moveTo(i, 0); ctx.lineTo(i, 500); }
+        for (let i = 0; i < 500; i += 40) { ctx.moveTo(0, i); ctx.lineTo(800, i); }
+        ctx.stroke();
+
+        const drawLine = (x1, y1, x2, y2, c, width = 2) => {
+          ctx.strokeStyle = c; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        };
+
+        const drawPoly = (points, c, close = true) => {
+          if (points.length < 2) return;
+          ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath();
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+          if (close) ctx.closePath();
+          ctx.stroke();
+        };
+
+        const renderEl = (el, selected) => {
+          const c = selected ? '#06b6d4' : (el.color || '#fff');
+
+          if (el.type === 'line') {
+            drawLine(el.x, el.y, el.x2, el.y2, c);
+            if (el.text) { const m = mid(el, { x: el.x2, y: el.y2 }); ctx.fillStyle = '#fab005'; ctx.fillText(el.text, m.x + 5, m.y - 5); }
+          }
+          else if (el.type === 'bisector') {
+            drawLine(el.x, el.y, el.x2, el.y2, c);
+            const m = mid({ x: el.x, y: el.y }, { x: el.x2, y: el.y2 });
+            const angle = Math.atan2(el.y2 - el.y, el.x2 - el.x);
+            const perpAngle = angle + Math.PI / 2;
+            const len = 20;
+            drawLine(m.x + Math.cos(perpAngle) * len, m.y + Math.sin(perpAngle) * len, m.x - Math.cos(perpAngle) * len, m.y - Math.sin(perpAngle) * len, c, 1);
+            // Right angle symbol
+            ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.beginPath();
+            const r = 8;
+            ctx.moveTo(m.x + Math.cos(angle) * r + Math.cos(perpAngle) * r, m.y + Math.sin(angle) * r + Math.sin(perpAngle) * r);
+            ctx.lineTo(m.x + Math.cos(angle) * r, m.y + Math.sin(angle) * r);
+            ctx.stroke();
+          }
+          else if (el.type === 'circle') {
+            const r = dist({ x: el.x, y: el.y }, { x: el.x2, y: el.y2 });
+            ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(el.x, el.y, r, 0, Math.PI * 2); ctx.stroke();
+          }
+          else if (el.type === 'poly') {
+            drawPoly(el.points, c);
+          }
+          else if (el.type === 'angle') {
+            if (el.v && el.p1 && el.p2) {
+              ctx.strokeStyle = '#fab005'; ctx.lineWidth = 1; ctx.beginPath();
+              const a1 = Math.atan2(el.p1.y - el.v.y, el.p1.x - el.v.x);
+              const a2 = Math.atan2(el.p2.y - el.v.y, el.p2.x - el.v.x);
+              let delta = (a2 - a1) * (180 / Math.PI);
+              if (delta < 0) delta += 360;
+              const r = 20;
+              if (Math.abs(delta - 90) < 5 || Math.abs(delta - 270) < 5) {
+                const dir1 = { x: Math.cos(a1) * 15, y: Math.sin(a1) * 15 };
+                const dir2 = { x: Math.cos(a2) * 15, y: Math.sin(a2) * 15 };
+                ctx.moveTo(el.v.x + dir1.x, el.v.y + dir1.y);
+                ctx.lineTo(el.v.x + dir1.x + dir2.x, el.v.y + dir1.y + dir2.y);
+                ctx.lineTo(el.v.x + dir2.x, el.v.y + dir2.y);
+              } else {
+                ctx.arc(el.v.x, el.v.y, r, a1, a2, delta > 180);
+              }
+              ctx.stroke();
+              ctx.fillStyle = '#fab005'; ctx.fillText(el.text + '°', el.v.x + 25, el.v.y - 10);
+            }
+          }
+          else if (el.type === 'text' && el.id !== textInput?.id) {
+            ctx.fillStyle = c; ctx.font = '16px Inter'; ctx.fillText(el.text, el.x, el.y);
+          }
+        };
+
+        elements.forEach(el => renderEl(el, el.id === selectedId));
+        if (currentShape) renderEl(currentShape, true);
+        if (multiStep && multiStep.points.length > 0) {
+          ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+          ctx.moveTo(multiStep.points[0].x, multiStep.points[0].y);
+          for (let i = 1; i < multiStep.points.length; i++) ctx.lineTo(multiStep.points[i].x, multiStep.points[i].y);
+          if (dragStart) ctx.lineTo(dragStart.x, dragStart.y);
+          ctx.stroke();
+        }
+
+      }, [elements, selectedId, currentShape, multiStep, dragStart, textInput]);
+
+      // --- EVENTS ---
+      const onMouseDown = (e) => {
+        if (textInput) { commitText(); return; }
+        const { x, y } = snapToPoint(getPos(e).x, getPos(e).y);
+        const p = { x, y };
+
+        if (tool === 'select') {
+          const hit = elements.find(el => {
+            if (el.type === 'text') return dist(p, { x: el.x, y: el.y }) < 20;
+            if (el.type === 'line' || el.type === 'bisector') return dist(p, mid({ x: el.x, y: el.y }, { x: el.x2, y: el.y2 })) < 20;
+            if (el.type === 'circle') return Math.abs(dist(p, { x: el.x, y: el.y }) - dist({ x: el.x, y: el.y }, { x: el.x2, y: el.y2 })) < 10;
+            if (el.type === 'poly') return dist(p, el.points[0]) < 20 || dist(p, el.points[1]) < 20;
+            return false;
+          });
+          if (hit) {
+            setSelectedId(hit.id);
+            if (hit.type === 'text') setTextInput({ x: hit.x, y: hit.y, text: hit.text, id: hit.id });
+          } else setSelectedId(null);
+          return;
+        }
+
+        if (tool === 'text') { setTextInput({ x, y, text: '' }); return; }
+
+        if (tool === 'angle') {
+          if (!multiStep) setMultiStep({ points: [p] });
+          else if (multiStep.points.length === 1) setMultiStep({ points: [multiStep.points[0], p] });
+          else {
+            const v = multiStep.points[1];
+            const ang = Math.round(angle(multiStep.points[0], v, p));
+            setElements([...elements, { id: Date.now(), type: 'angle', p1: multiStep.points[0], v: v, p2: p, text: ang.toString() }]);
+            setMultiStep(null); setTool('select');
+          }
+          return;
+        }
+
+        if (tool === 'triangle' || tool === 'pgram') {
+          if (!multiStep) { setMultiStep({ points: [p] }); setDragStart(p); }
+          else if (multiStep.points.length === 1) { setMultiStep({ points: [multiStep.points[0], p] }); setDragStart(p); }
+          else {
+            let pts = [];
+            if (tool === 'triangle') pts = [multiStep.points[0], multiStep.points[1], p];
+            if (tool === 'pgram') {
+              const dx = multiStep.points[0].x - multiStep.points[1].x;
+              const dy = multiStep.points[0].y - multiStep.points[1].y;
+              pts = [multiStep.points[0], multiStep.points[1], p, { x: p.x + dx, y: p.y + dy }];
+            }
+            setElements([...elements, { id: Date.now(), type: 'poly', points: pts, color }]);
+            setMultiStep(null); setDragStart(null); setTool('select');
+          }
+          return;
+        }
+
+        setDragStart({ x, y });
+        setCurrentShape({ type: tool, x, y, x2: x, y2: y, color });
+      };
+
+      const onMouseMove = (e) => {
+        const { x, y } = snapToPoint(getPos(e).x, getPos(e).y);
+
+        if (multiStep) { setDragStart({ x, y }); return; }
+        if (!dragStart || !currentShape) return;
+
+        let el = { ...currentShape, x2: x, y2: y };
+
+        if (tool === 'square') {
+          const d = Math.max(Math.abs(x - dragStart.x), Math.abs(y - dragStart.y));
+          const sx = x > dragStart.x ? 1 : -1;
+          const sy = y > dragStart.y ? 1 : -1;
+          el.x2 = dragStart.x + d * sx;
+          el.y2 = dragStart.y + d * sy;
+          el.type = 'poly';
+          el.points = [{ x: el.x, y: el.y }, { x: el.x2, y: el.y }, { x: el.x2, y: el.y2 }, { x: el.x, y: el.y2 }];
+        }
+        else if (tool === 'rect') {
+          el.type = 'poly';
+          el.points = [{ x: el.x, y: el.y }, { x: el.x2, y: el.y }, { x: el.x2, y: el.y2 }, { x: el.x, y: el.y2 }];
+        }
+        else if (tool === 'rhombus') {
+          const mx = (el.x + el.x2) / 2; const my = (el.y + el.y2) / 2;
+          el.points = [{ x: mx, y: el.y }, { x: el.x2, y: my }, { x: mx, y: el.y2 }, { x: el.x, y: my }];
+          el.type = 'poly';
+        }
+        else if (tool === 'kite') {
+          // Symmetric Kite Logic
+          // Axis is vertical (y1 to y2). Crossbar is horizontal.
+          // But dragging diagonally creates a bounding box.
+          const w = el.x2 - el.x;
+          const h = el.y2 - el.y;
+          const mx = el.x + w / 2;
+          const crossY = el.y + h * 0.35; // 35% down
+          // Top, Right, Bottom, Left
+          el.points = [
+            { x: mx, y: el.y }, // Top Mid
+            { x: el.x2, y: crossY }, // Right Cross
+            { x: mx, y: el.y2 }, // Bottom Mid
+            { x: el.x, y: crossY } // Left Cross
+          ];
+          el.type = 'poly';
+        }
+
+        setCurrentShape(el);
+      };
+
+      const onMouseUp = () => {
+        if (dragStart && currentShape && !multiStep) {
+          setElements([...elements, { ...currentShape, id: Date.now() }]);
+        }
+        if (!multiStep) { setDragStart(null); setCurrentShape(null); if (tool !== 'select') setTool('select'); }
+      };
+
+      // --- TEXT ---
+      const commitText = () => {
+        if (!textInput) return;
+        if (textInput.text.trim()) {
+          if (textInput.id) setElements(elements.filter(e => e.id !== textInput.id).concat({ ...textInput, type: 'text' }));
+          else setElements([...elements, { ...textInput, id: Date.now(), type: 'text', color: color }]);
+        } else if (textInput.id) setElements(elements.filter(e => e.id !== textInput.id));
+        setTextInput(null); setTool('select');
+      };
+
+      // --- UI ---
+      const Btn = ({ t, label }) => (
+        <button className={`btn ${tool === t ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setTool(t); setMultiStep(null); }} title={label} style={{ padding: '8px 12px' }}>
+          {label}
+        </button>
+      );
+      const Color = ({ c }) => <div onClick={() => setColor(c)} style={{ width: 20, height: 20, borderRadius: '50%', background: c, border: color === c ? '2px solid white' : '1px solid #555', cursor: 'pointer' }} />;
+
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Top Toolbar */}
+          <div className="glass" style={{ padding: 10, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Btn t="select" label="🖱️" />
+            <div style={{ width: 1, background: '#555', height: 20 }} />
+            <Btn t="line" label="Line" />
+            <Btn t="bisector" label="Bisect" />
+            <Btn t="triangle" label="Tri" />
+            <Btn t="rect" label="Rect" />
+            <Btn t="square" label="Sq" />
+            <Btn t="pgram" label="P-Gram" />
+            <Btn t="rhombus" label="Rhom" />
+            <Btn t="kite" label="Kite" />
+            <Btn t="circle" label="Circ" />
+            <div style={{ width: 1, background: '#555', height: 20 }} />
+            <Btn t="text" label="Tt" />
+            <Btn t="angle" label="∠" />
+
+            <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', gap: 5, background: 'rgba(0,0,0,0.3)', padding: 5, borderRadius: 20 }}>
+              <Color c="#ffffff" /> <Color c="#ef4444" /> <Color c="#fab005" /> <Color c="#22c55e" /> <Color c="#3b82f6" />
+            </div>
+
+            <button className="btn-secondary" style={{ color: '#ef4444' }} onClick={() => { if (selectedId) setElements(elements.filter(e => e.id !== selectedId)); setSelectedId(null); }}>🗑️</button>
+            <button className="btn-secondary" onClick={() => { setElements([]); onSave(null); }}>Clear</button>
+            <button className="btn-primary" onClick={() => onSave(canvasRef.current.toDataURL())}>Save</button>
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <canvas ref={canvasRef} width={800} height={500}
+              style={{ borderRadius: 8, cursor: tool === 'select' ? 'default' : 'crosshair', width: '100%', height: 'auto', background: '#1e1e1e', touchAction: 'none' }}
+              onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
+            />
+            {/* Text Input Overlay */}
+            {textInput && (
+              <input autoFocus value={textInput.text}
+                onChange={e => setTextInput({ ...textInput, text: e.target.value })}
+                onBlur={commitText} onKeyDown={e => e.key === 'Enter' && commitText()}
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  position: 'absolute', left: textInput.x, top: textInput.y, transform: 'translate(0, -50%)',
+                  background: 'transparent', border: '1px dashed var(--primary)', color: color, font: '16px Inter', padding: '2px 5px'
+                }}
+              />
+            )}
+            {/* Instructions Overlay */}
+            <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.6)', padding: '5px 10px', borderRadius: 4, fontSize: '0.8rem', color: '#ccc', pointerEvents: 'none' }}>
+              {tool === 'triangle' && (multiStep ? (multiStep.points.length === 1 ? "Click P2 (Base)" : "Click P3 (Tip)") : "Click P1 (Start)")}
+              {tool === 'pgram' && (multiStep ? (multiStep.points.length === 1 ? "Click P2 (Base)" : "Click P3 (Slant)") : "Click P1 (Start)")}
+              {tool === 'angle' && (multiStep ? (multiStep.points.length === 1 ? "Click Vertex" : "Click End") : "Click Start")}
+              {tool === 'bisector' && "Drag line to Bisect"}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // 2. Teacher Dashboard
+    const TeacherDashboard = ({ questions, setQuestions }) => {
+      const [view, setView] = useState('list'); // list | add
+      const [newQ, setNewQ] = useState({ book: 'NCERT', classNum: '9', chapter: '', text: '', options: ['', '', '', ''], correctOptionIndex: 0, diagramType: 'none', diagram: null });
+
+      const saveQuestion = () => {
+        if (!newQ.text) return alert("Question text required");
+        setQuestions([...questions, { ...newQ, id: Date.now() }]);
+        setView('list');
+      };
+
+      const downloadPortable = () => {
+        // Clone the document
+        const clone = document.documentElement.cloneNode(true);
+        // Reset root to loading state
+        const root = clone.querySelector('#root');
+        root.innerHTML = '<div style="padding: 50px; text-align: center;"><h1 style="opacity: 0.5;">Loading App...</h1><p style="opacity: 0.3;">Portable Version</p></div>';
+
+        // Inject Data
+        const scripts = clone.querySelectorAll('script');
+        scripts.forEach(s => {
+          if (s.innerHTML.includes('INITIAL_DATA')) {
+            s.innerHTML = `window.INITIAL_DATA = ${JSON.stringify(questions).replace(/<\/script/g, '<\\/script')};`;
+          }
+        });
+
+        // Download
+        const blob = new Blob(["<!DOCTYPE html>\n" + clone.outerHTML], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'mcq-master-portable.html';
+        a.click();
+      };
+
+      if (view === 'add') {
+        return (
+          <div className="container" style={{ maxWidth: 800 }}>
+            <h2 className="text-gradient">New Question</h2>
+            <div className="glass" style={{ padding: 20, marginTop: 20, display: 'flex', flexDirection: 'column', gap: 15 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <select style={{ flex: 1 }} value={newQ.classNum} onChange={e => setNewQ({ ...newQ, classNum: e.target.value })}><option value="9">Class 9</option><option value="10">Class 10</option></select>
+                <select style={{ flex: 1 }} value={newQ.book} onChange={e => setNewQ({ ...newQ, book: e.target.value })}><option>NCERT</option><option>RD Sharma</option><option>RS Aggarwal</option></select>
+                <input style={{ flex: 2 }} placeholder="Chapter" value={newQ.chapter} onChange={e => setNewQ({ ...newQ, chapter: e.target.value })} />
+              </div>
+              <textarea placeholder="Question Text" style={{ minHeight: 100 }} value={newQ.text} onChange={e => setNewQ({ ...newQ, text: e.target.value })} />
+
+              {/* Diagram */}
+              <div style={{ padding: 10, border: '1px solid var(--border)', borderRadius: 8 }}>
+                <label style={{ marginRight: 10 }}>Diagram:</label>
+                <select value={newQ.diagramType} onChange={e => setNewQ({ ...newQ, diagramType: e.target.value })}>
+                  <option value="none">None</option>
+                  <option value="upload">Upload</option>
+                  <option value="draw">Draw</option>
+                </select>
+                {newQ.diagramType === 'upload' && <input type="file" onChange={e => {
+                  const fr = new FileReader(); fr.onload = () => setNewQ({ ...newQ, diagram: fr.result }); fr.readAsDataURL(e.target.files[0]);
+                }} style={{ marginTop: 10 }} />}
+                {newQ.diagramType === 'draw' && <div style={{ marginTop: 10 }}><GeometryEditor onSave={d => setNewQ({ ...newQ, diagram: d })} /></div>}
+              </div>
+
+              {/* Options */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {newQ.options.map((opt, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 5 }}>
+                    <input type="radio" name="corr" checked={newQ.correctOptionIndex === i} onChange={() => setNewQ({ ...newQ, correctOptionIndex: i })} />
+                    <input style={{ width: '100%' }} placeholder={`Option ${i + 1}`} value={opt} onChange={e => {
+                      const opts = [...newQ.options]; opts[i] = e.target.value;
+                      setNewQ({ ...newQ, options: opts });
+                    }} />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button className="btn-secondary" onClick={() => setView('list')}>Cancel</button>
+                <button className="btn-primary" onClick={saveQuestion}>{Icons.Save} Save</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      const importJSON = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            if (Array.isArray(data)) {
+              if (confirm(`Replace current ${questions.length} questions with ${data.length} from file?`)) {
+                setQuestions(data);
+              }
+            } else {
+              alert("Invalid JSON format");
+            }
+          } catch (err) {
+            alert("Error parsing JSON: " + err.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      return (
+        <div className="container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 className="text-gradient">Question Bank ({questions.length})</h2>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <label className="btn-secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                {Icons.FileJson} Import <input type="file" accept=".json" style={{ display: 'none' }} onChange={importJSON} />
+              </label>
+              <button className="btn-secondary" onClick={() => {
+                const a = document.createElement('a'); a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(questions)); a.download = 'mcq_data.json'; a.click();
+              }}>{Icons.FileJson} JSON</button>
+              <button className="btn-secondary" onClick={downloadPortable} title="Save as a standalone HTML file with your data">{Icons.Save} Save App</button>
+              <button className="btn-primary" onClick={() => setView('add')}>{Icons.Plus} Add Question</button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {questions.map(q => (
+              <div key={q.id} className="glass" style={{ padding: 15, display: 'flex', justifyContent: 'space-between' }}>
+                <div><span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>[{q.book}]</span> {q.text}</div>
+                <button style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }} onClick={() => {
+                  setQuestions(questions.filter(x => x.id !== q.id));
+                }}>{Icons.Trash2}</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    // 3. Student Quiz
+    const StudentQuiz = ({ questions, onExit }) => {
+      // Setup State
+      const [mode, setMode] = useState('setup');
+      const [config, setConfig] = useState({ class: '9', chapter: '', count: 10, timer: 0, grading: true });
+      const [quizData, setQuizData] = useState([]);
+
+      // Runner State
+      const [idx, setIdx] = useState(0);
+      const [answers, setAnswers] = useState({});
+      const [timeLeft, setTimeLeft] = useState(null);
+      const [showResult, setShowResult] = useState(false);
+
+      useEffect(() => {
+        if (timeLeft === null || showResult) return;
+        const t = setInterval(() => {
+          setTimeLeft(p => {
+            if (p <= 1) { nextQ(); return config.timer; }
+            return p - 1;
+          });
+        }, 1000);
+        return () => clearInterval(t);
+      }, [timeLeft, idx, showResult]);
+
+      const startQuiz = () => {
+        let pool = questions.filter(q => q.classNum === config.class && (!config.chapter || q.chapter === config.chapter));
+        if (pool.length === 0) return alert('No questions found');
+        pool = pool.sort(() => 0.5 - Math.random()).slice(0, config.count);
+        setQuizData(pool);
+        setIdx(0);
+        setAnswers({});
+        if (config.timer > 0) setTimeLeft(config.timer);
+        setMode('run');
+      };
+
+      const nextQ = () => {
+        if (idx < quizData.length - 1) {
+          setIdx(idx + 1);
+          if (config.timer > 0) setTimeLeft(config.timer);
+        } else {
+          setShowResult(true);
+        }
+      };
+
+      const chapters = useMemo(() => Array.from(new Set(questions.filter(q => q.classNum === config.class).map(q => q.chapter))), [questions, config.class]);
+
+      if (mode === 'setup') {
+        return (
+          <div className="container" style={{ maxWidth: 500, marginTop: '10vh' }}>
+            <div className="glass" style={{ padding: 30 }}>
+              <h2 style={{ textAlign: 'center', marginBottom: 20 }}>Quiz Setup</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                <div><label>Class</label><select style={{ width: '100%' }} value={config.class} onChange={e => setConfig({ ...config, class: e.target.value })}><option value="9">9</option><option value="10">10</option></select></div>
+                <div><label>Chapter</label><select style={{ width: '100%' }} value={config.chapter} onChange={e => setConfig({ ...config, chapter: e.target.value })}><option value="">All</option>{chapters.map(c => <option key={c}>{c}</option>)}</select></div>
+                <div><label>Timer (secs)</label><input type="number" style={{ width: '100%' }} value={config.timer} onChange={e => setConfig({ ...config, timer: parseInt(e.target.value) })} /></div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 5 }}>
+                  <input type="checkbox" checked={config.grading} onChange={e => setConfig({ ...config, grading: e.target.checked })} style={{ width: 'auto' }} />
+                  <label>Enable Grading (Show Score)</label>
+                </div>
+
+                <button className="btn-primary" style={{ justifyContent: 'center' }} onClick={startQuiz}>{Icons.Play} Start</button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (showResult) {
+        const correct = quizData.filter(q => answers[q.id] === q.correctOptionIndex).length;
+        return (
+          <div className="container">
+            <div style={{ textAlign: 'center', margin: '40px 0' }}>
+              <h1 className="text-gradient" style={{ fontSize: '4rem' }}>{config.grading ? `${Math.round((correct / quizData.length) * 100)}%` : 'Completed!'}</h1>
+              {config.grading && <p>You scored {correct} / {quizData.length}</p>}
+              {!config.grading && <p>Good practice session.</p>}
+            </div>
+            <div style={{ display: 'grid', gap: 15 }}>
+              {quizData.map((q, i) => (
+                <div key={i} className="glass" style={{ padding: 20, borderLeft: config.grading ? (answers[q.id] === q.correctOptionIndex ? '4px solid var(--primary)' : '4px solid red') : '4px solid var(--text-muted)' }}>
+                  <h4>Q{i + 1}: {q.text}</h4>
+                  {q.diagram && <img src={q.diagram} style={{ maxHeight: 100, margin: '10px 0' }} />}
+                  <div style={{ opacity: 0.8, marginTop: 5 }}>
+                    Correct: {q.options[q.correctOptionIndex]} <br />
+                    Your Answer: {q.options[answers[q.id]] || 'Skipped'}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn-secondary" style={{ width: '100%', margin: '20px 0' }} onClick={onExit}>{Icons.Home} Home</button>
+          </div>
+        );
+      }
+
+      const q = quizData[idx];
+      return (
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '15px 30px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontWeight: 800 }}>Question {idx + 1}/{quizData.length}</span>
+            {timeLeft !== null && <span style={{ color: timeLeft < 5 ? 'red' : 'var(--primary)', display: 'flex', gap: 5, alignItems: 'center' }}>{Icons.Clock} {timeLeft}s</span>}
+          </div>
+
+          <div className="container split-layout" style={{ flex: 1, padding: 20, alignItems: 'start' }}>
+            {/* LEFT: Question + Options */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto', maxHeight: '100%' }}>
+              <h2 style={{ fontSize: '1.5rem', lineHeight: '1.4' }}>{q.text}</h2>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {q.options.map((opt, i) => (
+                  <button key={i} className={`option-btn ${answers[q.id] === i ? 'selected' : ''}`}
+                    onClick={() => setAnswers({ ...answers, [q.id]: i })}>
+                    <span style={{ opacity: 0.5 }}>{i + 1} |</span> <span>{opt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT: Diagram (if exists) */}
+            {q.diagram && (
+              <div className="glass" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                <img src={q.diagram} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+              </div>
+            )}
+          </div>
+
+          <div style={{ padding: 20, textAlign: 'right', borderTop: '1px solid var(--border)' }}>
+            <button className="btn-primary" onClick={nextQ}>Next {Icons.ArrowRight}</button>
+          </div>
+        </div>
+      );
+    };
+
+    // --- MAIN APP ---
+    const App = () => {
+      const [view, setView] = useState('landing');
+      const [questions, setQuestions] = useState([]);
+      const [theme, setTheme] = useState('dark');
+
+      const [isLoaded, setIsLoaded] = useState(false);
+
+      useEffect(() => {
+        const saved = localStorage.getItem('mcq_data');
+        if (saved) {
+          setQuestions(JSON.parse(saved));
+        } else {
+          setQuestions(INITIAL_DATA);
+        }
+        setIsLoaded(true);
+      }, []);
+
+      useEffect(() => {
+        if (isLoaded) localStorage.setItem('mcq_data', JSON.stringify(questions));
+      }, [questions, isLoaded]);
+
+      const toggleTheme = () => {
+        const next = theme === 'dark' ? 'light' : 'dark';
+        setTheme(next);
+        document.body.className = next === 'light' ? 'light-theme' : '';
+      };
+
+      return (
+        <div>
+          {view !== 'run_quiz' && (
+            <nav className="glass" style={{ position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 20, padding: '10px 20px', zIndex: 100, alignItems: 'center' }}>
+              <b className="text-gradient">MCQ MASTER</b>
+              <button onClick={() => setView('landing')} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer' }}>Home</button>
+              <button onClick={() => setView('teacher')} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer' }}>Teacher</button>
+              <button onClick={toggleTheme} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex' }}>
+                {theme === 'dark' ? Icons.Sun : Icons.Moon}
+              </button>
+            </nav>
+          )}
+
+          <main style={{ paddingTop: view === 'run_quiz' ? 0 : 80 }}>
+            {view === 'landing' && (
+              <div className="container" style={{ textAlign: 'center', marginTop: '15vh' }}>
+                <h1 className="text-gradient" style={{ fontSize: '4rem', marginBottom: 20 }}>MCQ system</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}> quiz tool.</p>
+                <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 40 }}>
+                  <button className="glass" style={{ padding: 40, cursor: 'pointer' }} onClick={() => setView('run_quiz')}>
+                    {Icons.Play} <br /> Start Quiz
+                  </button>
+                  <button className="glass" style={{ padding: 40, cursor: 'pointer' }} onClick={() => setView('teacher')}>
+                    {Icons.Settings} <br /> Manage
+                  </button>
+                </div>
+              </div>
+            )}
+            {view === 'teacher' && <TeacherDashboard questions={questions} setQuestions={setQuestions} />}
+            {view === 'run_quiz' && <StudentQuiz questions={questions} onExit={() => setView('landing')} />}
+          </main>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+
+</html>
