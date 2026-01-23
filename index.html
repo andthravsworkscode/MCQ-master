@@ -111,14 +111,46 @@
     }
 
     .btn-secondary {
-      background: transparent;
-      border: 1px solid var(--border);
+      --radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .45rem .7rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
       color: var(--text);
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      box-shadow:
+        0 6px 14px rgba(2, 6, 23, 0.6),
+        0 1px 0 rgba(255, 255, 255, 0.03);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: var(--text-muted);
+    .btn-secondary:focus {
+      outline: none;
+      box-shadow:
+        0 6px 20px var(--primary-glow, rgba(6, 182, 212, 0.15));
+    }
+
+    /* pressed (mouse down / touch) */
+    .btn-secondary:active,
+    .btn-secondary.pressed {
+      transform: translateY(2px);
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.01));
+      box-shadow:
+        inset 0 3px 6px rgba(0, 0, 0, 0.45),
+        0 2px 6px rgba(2, 6, 23, 0.45);
+    }
+
+    /* optional subtle icon spacing */
+    .btn-secondary svg {
+      display: inline-block;
+      vertical-align: middle;
+      width: 1.1em;
+      height: 1.1em;
     }
 
     .container {
@@ -213,8 +245,8 @@
 
     // --- INLINE DATA ---
     window.INITIAL_DATA = [
-      { id: 1, book: 'NCERT', classNum: '9', chapter: 'Number Systems', text: 'Every natural number is a whole number.', options: ['True', 'False', 'Depends', 'None'], correctOptionIndex: 0, diagram: null },
-      { id: 2, book: 'RD Sharma', classNum: '9', chapter: 'Polynomials', text: 'Degree of a zero polynomial is:', options: ['0', '1', 'Not defined', 'None of these'], correctOptionIndex: 2, diagram: null }
+    { id: 1, book: 'NCERT', classNum: '11', chapter: 'Limits', text: 'O is worthless', options: ['True', 'False', 'Depends', 'None'], correctOptionIndex: 3, diagram: null },
+      
     ];
   </script>
 
@@ -249,6 +281,7 @@
       const [tool, setTool] = useState('line');
       const [color, setColor] = useState('#ffffff');
       const [selectedId, setSelectedId] = useState(null);
+      const lastClickRef = useRef(0);
 
       const [dragStart, setDragStart] = useState(null);
       const [currentShape, setCurrentShape] = useState(null);
@@ -392,8 +425,37 @@
           });
           if (hit) {
             setSelectedId(hit.id);
-            if (hit.type === 'text') setTextInput({ x: hit.x, y: hit.y, text: hit.text, id: hit.id });
-          } else setSelectedId(null);
+            // double-click to edit text, single click selects and starts move
+            if (hit.type === 'text') {
+              const now = Date.now();
+              if (now - lastClickRef.current < 350) {
+                setTextInput({ x: hit.x, y: hit.y, text: hit.text, id: hit.id });
+                lastClickRef.current = 0;
+              } else {
+                lastClickRef.current = now;
+                // start move drag
+                setDragStart({ x, y, type: 'move', origX: hit.x, origY: hit.y });
+              }
+            } else {
+              // for non-text, start move drag as well
+              setDragStart({ x, y, type: 'move', origEl: hit });
+            }
+          } else {
+            setSelectedId(null);
+          }
+          return;
+        }
+
+        if (tool === 'erase') {
+          // delete element under cursor
+          const hit = elements.find(el => {
+            if (el.type === 'text') return dist(p, { x: el.x, y: el.y }) < 20;
+            if (el.type === 'line' || el.type === 'bisector') return dist(p, mid({ x: el.x, y: el.y }, { x: el.x2, y: el.y2 })) < 20;
+            if (el.type === 'circle') return Math.abs(dist(p, { x: el.x, y: el.y }) - dist({ x: el.x, y: el.y }, { x: el.x2, y: el.y2 })) < 10;
+            if (el.type === 'poly') return dist(p, el.points[0]) < 20 || dist(p, el.points[1]) < 20;
+            return false;
+          });
+          if (hit) setElements(elements.filter(e => e.id !== hit.id));
           return;
         }
 
@@ -436,6 +498,23 @@
         const { x, y } = snapToPoint(getPos(e).x, getPos(e).y);
 
         if (multiStep) { setDragStart({ x, y }); return; }
+
+        // handle moving selected element
+        if (dragStart && dragStart.type === 'move' && selectedId) {
+          const dx = x - dragStart.x;
+          const dy = y - dragStart.y;
+          setElements(prev => prev.map(el => {
+            if (el.id !== selectedId) return el;
+            if (el.type === 'text') return { ...el, x: (dragStart.origX || el.x) + dx, y: (dragStart.origY || el.y) + dy };
+            // generic move for other shapes: translate all points/coords if origEl provided
+            if (el.type === 'line' || el.type === 'bisector') return { ...el, x: (el.x + dx), y: (el.y + dy), x2: (el.x2 + dx), y2: (el.y2 + dy) };
+            if (el.type === 'circle') return { ...el, x: (el.x + dx), y: (el.y + dy), x2: (el.x2 + dx), y2: (el.y2 + dy) };
+            if (el.type === 'poly') return { ...el, points: el.points.map(p => ({ x: p.x + dx, y: p.y + dy })) };
+            return el;
+          }));
+          return;
+        }
+
         if (!dragStart || !currentShape) return;
 
         let el = { ...currentShape, x2: x, y2: y };
@@ -498,7 +577,19 @@
 
       // --- UI ---
       const Btn = ({ t, label }) => (
-        <button className={`btn ${tool === t ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setTool(t); setMultiStep(null); }} title={label} style={{ padding: '8px 12px' }}>
+        <button type="button" className={`btn ${tool === t ? 'btn-primary' : 'btn-secondary'}`} onClick={() => {
+          setMultiStep(null);
+          if (t === 'text') {
+            // place a new text input in the middle of the canvas so user can immediately type
+            const r = canvasRef.current?.getBoundingClientRect();
+            const left = r ? Math.round(r.width / 2) : 100;
+            const top = r ? Math.round(r.height / 2) : 50;
+            setTextInput({ x: left, y: top, text: '' });
+            setTool('text');
+            return;
+          }
+          setTool(t);
+        }} title={label} style={{ padding: '8px 12px' }}>
           {label}
         </button>
       );
@@ -521,6 +612,7 @@
             <Btn t="circle" label="Circ" />
             <div style={{ width: 1, background: '#555', height: 20 }} />
             <Btn t="text" label="Tt" />
+            <Btn t="erase" label="Eraser" />
             <Btn t="angle" label="∠" />
 
             <div style={{ flex: 1 }} />
@@ -528,8 +620,7 @@
               <Color c="#ffffff" /> <Color c="#ef4444" /> <Color c="#fab005" /> <Color c="#22c55e" /> <Color c="#3b82f6" />
             </div>
 
-            <button className="btn-secondary" style={{ color: '#ef4444' }} onClick={() => { if (selectedId) setElements(elements.filter(e => e.id !== selectedId)); setSelectedId(null); }}>🗑️</button>
-            <button className="btn-secondary" onClick={() => { setElements([]); onSave(null); }}>Clear</button>
+            <button className="btn-secondary" style={{ color: '#ef4444' }} onClick={() => { setElements([]); setSelectedId(null); }}>🗑️</button>
             <button className="btn-primary" onClick={() => onSave(canvasRef.current.toDataURL())}>Save</button>
           </div>
 
@@ -673,9 +764,7 @@
               <label className="btn-secondary" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                 {Icons.FileJson} Import <input type="file" accept=".json" style={{ display: 'none' }} onChange={importJSON} />
               </label>
-              <button className="btn-secondary" onClick={() => {
-                const a = document.createElement('a'); a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(questions)); a.download = 'mcq_data.json'; a.click();
-              }}>{Icons.FileJson} JSON</button>
+          
               <button className="btn-secondary" onClick={downloadPortable} title="Save as a standalone HTML file with your data">{Icons.Save} Save App</button>
               <button className="btn-primary" onClick={() => setView('add')}>{Icons.Plus} Add Question</button>
             </div>
@@ -755,7 +844,12 @@
                   <label>Enable Grading (Show Score)</label>
                 </div>
 
-                <button className="btn-primary" style={{ justifyContent: 'center' }} onClick={startQuiz}>{Icons.Play} Start</button>
+                <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                  <button className="btn-secondary" style={{ justifyContent: 'center', flex: '0 0 140px' }} onClick={onExit}>{Icons.Home} </button>
+                  <div style={{ flex: 1 }}>
+                    <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={startQuiz}>{Icons.Play} Start</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -790,33 +884,37 @@
 
       const q = quizData[idx];
       return (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '15px 30px', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
             <span style={{ fontWeight: 800 }}>Question {idx + 1}/{quizData.length}</span>
             {timeLeft !== null && <span style={{ color: timeLeft < 5 ? 'red' : 'var(--primary)', display: 'flex', gap: 5, alignItems: 'center' }}>{Icons.Clock} {timeLeft}s</span>}
           </div>
 
-          <div className="container split-layout" style={{ flex: 1, padding: 20, alignItems: 'start' }}>
-            {/* LEFT: Question + Options */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto', maxHeight: '100%' }}>
-              <h2 style={{ fontSize: '1.5rem', lineHeight: '1.4' }}>{q.text}</h2>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {q.options.map((opt, i) => (
-                  <button key={i} className={`option-btn ${answers[q.id] === i ? 'selected' : ''}`}
-                    onClick={() => setAnswers({ ...answers, [q.id]: i })}>
-                    <span style={{ opacity: 0.5 }}>{i + 1} |</span> <span>{opt}</span>
-                  </button>
-                ))}
-              </div>
+          <div className="container" style={{ flex: 1, padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Question box */}
+            <div className="glass" style={{ padding: 20, borderRadius: 12 }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', lineHeight: 1.4 }}>{q.text}</h3>
             </div>
 
-            {/* RIGHT: Diagram (if exists) */}
-            {q.diagram && (
-              <div className="glass" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)' }}>
-                <img src={q.diagram} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            {/* Diagram (if any) */}
+            {q.diagram ? (
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div className="glass" style={{ width: '100%', maxWidth: 520, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.18)' }}>
+                  <img src={q.diagram} alt="diagram" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                </div>
               </div>
-            )}
+            ) : null}
+
+            {/* Options listed as numbered lines */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+              {q.options.map((opt, i) => (
+                <div key={i} className={`option-line ${answers[q.id] === i ? 'selected' : ''}`} onClick={() => setAnswers({ ...answers, [q.id]: i })}
+                  style={{ padding: '10px 12px', borderRadius: 8, background: answers[q.id] === i ? 'var(--option-hover)' : 'transparent', border: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', display: 'flex', gap: 12 }}>
+                  <div style={{ fontWeight: 700, width: 36 }}>{i + 1})</div>
+                  <div style={{ flex: 1 }}>{opt}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ padding: 20, textAlign: 'right', borderTop: '1px solid var(--border)' }}>
@@ -860,7 +958,7 @@
             <nav className="glass" style={{ position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 20, padding: '10px 20px', zIndex: 100, alignItems: 'center' }}>
               <b className="text-gradient">MCQ MASTER</b>
               <button onClick={() => setView('landing')} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer' }}>Home</button>
-              <button onClick={() => setView('teacher')} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer' }}>Teacher</button>
+            
               <button onClick={toggleTheme} style={{ background: 'none', border: 'none', color: 'var(--text)', cursor: 'pointer', display: 'flex' }}>
                 {theme === 'dark' ? Icons.Sun : Icons.Moon}
               </button>
